@@ -94,6 +94,7 @@ LANGUAGES = (
     ('af', 'Afrikaans'),
     ('sw', 'Swahili'),
     ('pt', 'Portuguese'),
+    ('pt-br', 'Portuguese (Brazil)'),
     ('ru', 'Russian'),
     ('vi', 'Vietnamese'),
     ('ko', '한국어'),
@@ -521,6 +522,7 @@ UPLOADER = {
     'BACKEND': 'geonode.rest',
     'OPTIONS': {
         'TIME_ENABLED': False,
+        'MOSAIC_ENABLED': False,
         'GEOGIG_ENABLED': False,
     }
 }
