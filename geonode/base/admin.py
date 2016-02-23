@@ -89,7 +89,7 @@ class ContactRoleAdmin(admin.ModelAdmin):
     list_display_links = ('id',)
     list_display = ('id', 'contact', 'resource', 'role')
     list_editable = ('contact', 'resource', 'role')
-    form = autocomplete_light.modelform_factory(ContactRole)
+    form = autocomplete_light.modelform_factory(ContactRole, fields = '__all__')
 
 
 class LinkAdmin(admin.ModelAdmin):
@@ -98,7 +98,7 @@ class LinkAdmin(admin.ModelAdmin):
     list_display = ('id', 'resource', 'extension', 'link_type', 'name', 'mime')
     list_filter = ('resource', 'extension', 'link_type', 'mime')
     search_fields = ('name', 'resource__title',)
-    form = autocomplete_light.modelform_factory(Link)
+    form = autocomplete_light.modelform_factory(Link, fields = '__all__')
 
 admin.site.register(TopicCategory, TopicCategoryAdmin)
 admin.site.register(Region, RegionAdmin)
@@ -110,4 +110,5 @@ admin.site.register(License, LicenseAdmin)
 
 
 class ResourceBaseAdminForm(autocomplete_light.ModelForm):
-    keywords = TaggitField(widget=TaggitWidget('TagAutocomplete'), required=False)
+    #keywords = TaggitField(widget=TaggitWidget('TagAutocomplete'), required=False)
+    keywords = TaggitField(widget=TaggitWidget(), required=False)

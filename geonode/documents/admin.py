@@ -7,6 +7,7 @@ class DocumentAdminForm(ResourceBaseAdminForm):
 
     class Meta:
         model = Document
+        fields = '__all__'
 
 
 class DocumentAdmin(MediaTranslationAdmin):

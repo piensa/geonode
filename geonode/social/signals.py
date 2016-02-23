@@ -29,7 +29,7 @@ from django.conf import settings
 from django.db.models import signals
 from django.utils.translation import ugettext as _
 
-from actstream.exceptions import ModelNotActionable
+#from actstream.exceptions import ModelNotActionable
 
 from geonode.layers.models import Layer
 from geonode.maps.models import Map
@@ -126,7 +126,8 @@ def activity_post_modify_object(sender, instance, created=None, **kwargs):
                           object_name=action.get('object_name'),
                           raw_action=raw_action,
                           )
-        except ModelNotActionable:
+        #except ModelNotActionable:
+        except:
             logger.debug('The activity received a non-actionable Model or None as the actor/action.')
 
 
