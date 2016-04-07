@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #########################################################################
 #
-# Copyright (C) 2016 OSGeo
+# Copyright (C) 2012 Open Source Geospatial Foundation
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -500,7 +500,7 @@ def pre_delete_layer(instance, sender, **kwargs):
         object_id=instance.id).delete()
     default_style = instance.default_style
     for style in instance.styles.all():
-        if style.layer_styles.all().count() == 1:
+        if style.LayerStyles.all().count() == 1:
             if style != default_style:
                 style.delete()
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #########################################################################
 #
-# Copyright (C) 2016 OSGeo
+# Copyright (C) 2012 Open Source Geospatial Foundation
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -92,8 +92,8 @@ setup(name='GeoNode',
         "httplib2==0.9.2", # python-httplib2
         "transifex-client==0.10", # transifex-client
         "Paver==1.2.1", # python-paver
-        "nose <=1.0, <=1.3.1", # python-nose
-        "django-nose==1.2", # python-django-nose
+        "nose>=1.3.1", # python-nose
+        "django-nose>=1.2", # python-django-nose
         "awesome-slugify==1.6.2",
 
         # Django Apps
@@ -110,9 +110,9 @@ setup(name='GeoNode',
         "pinax-theme-bootstrap-account==1.0b2",
         "django-forms-bootstrap==3.0.1",
         "django-friendly-tag-loader==1.2.1",
-        "django-activity-stream==0.6.0",
+        "django-activity-stream==0.6.1",
         "django-downloadview==1.2",
-        "django-tastypie==0.13.3",
+        "django-tastypie==0.12.2",
 
         "django-polymorphic==0.9",
         "django-leaflet==0.13.7",
@@ -123,8 +123,8 @@ setup(name='GeoNode',
         "django-geoexplorer>=4.0.5",
         "geonode-user-messages==0.1.2",
         "geonode-avatar==2.1.4",
-        "geonode-announcements==1.0.6",
-        "geonode-agon-ratings==0.3.3",
+        "geonode-announcements==1.0.7",
+        "geonode-agon-ratings==0.3.4",
         "geonode-user-accounts==1.0.10",
         "geonode-arcrest==10.2",
         "geonode-notification==1.1.1",

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #########################################################################
 #
-# Copyright (C) 2016 OSGeo
+# Copyright (C) 2012 Open Source Geospatial Foundation
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,7 +42,8 @@ class CategoryForm(forms.Form):
     category_choice_field = CategoryChoiceField(required=False,
                                                 label='*' + _('Category'),
                                                 empty_label=None,
-                                                queryset=TopicCategory.objects.extra(order_by=['description']))
+                                                queryset=TopicCategory.objects.filter(is_choice=True)
+                                                .extra(order_by=['description']))
 
     def clean(self):
         cleaned_data = self.data

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #########################################################################
 #
-# Copyright (C) 2016 OSGeo
+# Copyright (C) 2012 Open Source Geospatial Foundation
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ except ImportError:
 from django.utils.html import escape
 from django.template.defaultfilters import slugify
 from django.forms.models import inlineformset_factory
+from django.db import transaction
 from django.db.models import F
 from django.forms.util import ErrorList
 
@@ -581,7 +582,8 @@ def layer_remove(request, layername, template='layers/layer_remove.html'):
         }))
     if (request.method == 'POST'):
         try:
-            delete_layer.delay(object_id=layer.id)
+            with transaction.atomic():
+                delete_layer.delay(object_id=layer.id)
         except Exception as e:
             message = '{0}: {1}.'.format(_('Unable to delete layer'), layer.typename)
 

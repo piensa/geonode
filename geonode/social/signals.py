@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #########################################################################
 #
-# Copyright (C) 2016 OSGeo
+# Copyright (C) 2012 Open Source Geospatial Foundation
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -128,7 +128,7 @@ def activity_post_modify_object(sender, instance, created=None, **kwargs):
                           raw_action=raw_action,
                           )
         #except ModelNotActionable:
-        except:
+        except Exception, err:
             logger.debug('The activity received a non-actionable Model or None as the actor/action.')
 
 
