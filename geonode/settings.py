@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #########################################################################
 #
-# Copyright (C) 2012 OpenPlans
+# Copyright (C) 2012 Open Source Geospatial Foundation
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -94,6 +94,7 @@ LANGUAGES = (
     ('af', 'Afrikaans'),
     ('sw', 'Swahili'),
     ('pt', 'Portuguese'),
+    ('pt-br', 'Portuguese (Brazil)'),
     ('ru', 'Russian'),
     ('vi', 'Vietnamese'),
     ('ko', '한국어'),
@@ -521,6 +522,7 @@ UPLOADER = {
     'BACKEND': 'geonode.rest',
     'OPTIONS': {
         'TIME_ENABLED': False,
+        'MOSAIC_ENABLED': False,
         'GEOGIG_ENABLED': False,
     }
 }

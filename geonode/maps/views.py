@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #########################################################################
 #
-# Copyright (C) 2012 OpenPlans
+# Copyright (C) 2012 Open Source Geospatial Foundation
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -542,7 +542,11 @@ def new_map_config(request):
                 x = (minx + maxx) / 2
                 y = (miny + maxy) / 2
 
-                center = list(forward_mercator((x, y)))
+                if getattr(settings, 'DEFAULT_MAP_CRS', 'EPSG:900913') == "EPSG:4326":
+                    center = list((x, y))
+                else:
+                    center = list(forward_mercator((x, y)))
+
                 if center[1] == float('-inf'):
                     center[1] = 0
 
@@ -881,3 +885,12 @@ def map_thumbnail(request, mapid):
                 status=500,
                 content_type='text/plain'
             )
+
+
+def map_metadata_detail(request, mapid, template='maps/map_metadata_detail.html'):
+    map_obj = _resolve_map(request, mapid, 'view_resourcebase')
+    return render_to_response(template, RequestContext(request, {
+        "layer": map_obj,
+        "mapid": mapid,
+        'SITEURL': settings.SITEURL[:-1]
+    }))
