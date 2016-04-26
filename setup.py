@@ -112,7 +112,7 @@ setup(name='GeoNode',
         "django-friendly-tag-loader==1.2.1",
         "django-activity-stream==0.6.0",
         "django-downloadview==1.2",
-        "django-tastypie==0.13.3",
+        "django-tastypie==0.12.2",
 
         "django-polymorphic==0.9",
         "django-leaflet==0.13.7",
