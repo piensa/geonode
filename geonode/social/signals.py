@@ -128,7 +128,7 @@ def activity_post_modify_object(sender, instance, created=None, **kwargs):
                           raw_action=raw_action,
                           )
         #except ModelNotActionable:
-        except:
+        except Exception, err:
             logger.debug('The activity received a non-actionable Model or None as the actor/action.')
 
 

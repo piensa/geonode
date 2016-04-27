@@ -110,7 +110,7 @@ setup(name='GeoNode',
         "pinax-theme-bootstrap-account==1.0b2",
         "django-forms-bootstrap==3.0.1",
         "django-friendly-tag-loader==1.2.1",
-        "django-activity-stream==0.6.0",
+        "django-activity-stream==0.6.1",
         "django-downloadview==1.2",
         "django-tastypie==0.12.2",
 
