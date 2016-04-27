@@ -21,7 +21,7 @@
 from distutils.core import setup
 from distutils.command.install import INSTALL_SCHEMES
 import os
-import sys
+
 
 def fullsplit(path, result=None):
     """
@@ -54,7 +54,8 @@ geonode_dir = 'geonode'
 for dirpath, dirnames, filenames in os.walk(geonode_dir):
     # Ignore dirnames that start with '.'
     for i, dirname in enumerate(dirnames):
-        if dirname.startswith('.'): del dirnames[i]
+        if dirname.startswith('.'):
+            del dirnames[i]
     if '__init__.py' in filenames:
         packages.append('.'.join(fullsplit(dirpath)))
     elif filenames:
@@ -75,37 +76,37 @@ setup(name='GeoNode',
       packages=packages,
       data_files=data_files,
       install_requires=[
-        ## The commented name next to the package
-        ## is the Ubuntu 14.04 package that provides it.
+        # # The commented name next to the package
+        # # is the Ubuntu 14.04 package that provides it.
 
-        ## Apps with official Ubuntu 14.04 packages
+        # # Apps with official Ubuntu 14.04 packages
 
         # native dependencies
-        "pillow>=3.1.1", # python-pillow
-        "lxml>=3.4.4", # python-lxml
-        # "psycopg2==2.4.5", # python-psycopg2
-        "Django==1.8.7", # python-django
+        "pillow>=3.1.1",  # python-pillow
+        "lxml>=3.4.4",  # python-lxml
+        # "psycopg2==2.4.5",  # python-psycopg2
+        "Django==1.8.7",  # python-django
 
         # Other
-        "beautifulsoup4==4.2.1", # python-bs4
-        "MultipartPostHandler==0.1.0", # python-multipartposthandler
-        "httplib2==0.9.2", # python-httplib2
-        "transifex-client==0.10", # transifex-client
-        "Paver==1.2.1", # python-paver
-        "nose>=1.3.1", # python-nose
-        "django-nose>=1.2", # python-django-nose
+        "beautifulsoup4==4.2.1",  # python-bs4
+        "MultipartPostHandler==0.1.0",  # python-multipartposthandler
+        "httplib2==0.9.2",  # python-httplib2
+        "transifex-client==0.10",  # transifex-client
+        "Paver==1.2.1",  # python-paver
+        "nose>=1.3.1",  # python-nose
+        "django-nose>=1.2",  # python-django-nose
         "awesome-slugify==1.6.2",
 
         # Django Apps
-        "django-pagination >=1.0.5, <=1.0.7", # python-django-pagination
-        "django-jsonfield==0.9.16", # python-django-jsonfield
-        "django-extensions==1.6.1", # python-django-extensions
-        "django-taggit==0.18.0", # python-django-taggit
-        "django-mptt==0.8.0", # django-mptt
-        "django-guardian==1.4.1", #django-guardian
-        # "django-admin-bootstrapped==1.6.5", #django-admin-bootstrapped
+        "django-pagination >=1.0.5, <=1.0.7",  # python-django-pagination
+        "django-jsonfield==0.9.16",  # python-django-jsonfield
+        "django-extensions==1.6.1",  # python-django-extensions
+        "django-taggit==0.18.0",  # python-django-taggit
+        "django-mptt==0.8.0",  # django-mptt
+        "django-guardian==1.4.1",  # django-guardian
+        # "django-admin-bootstrapped==1.6.5",  # django-admin-bootstrapped
 
-        ## Apps with packages provided in GeoNode's PPA on Launchpad.
+        # # Apps with packages provided in GeoNode's PPA on Launchpad.
         "pinax-theme-bootstrap==3.0a11",
         "pinax-theme-bootstrap-account==1.0b2",
         "django-forms-bootstrap==3.0.1",
