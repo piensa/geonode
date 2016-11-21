@@ -156,6 +156,9 @@ if activity:
 if notification_app:
 
     def notification_post_save_resource(instance, sender, created, **kwargs):
+        pass
+
+    def notification_post_save_resource2(instance, sender, created, **kwargs):
         """ Send a notification when a layer, map or document is created or
         updated
         """
