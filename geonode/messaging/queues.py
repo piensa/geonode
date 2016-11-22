@@ -1,4 +1,7 @@
 from kombu import Exchange, Queue
 
-geonode_task_exchange = Exchange("geonode", type="fanout")
-queue_geoserver_events = Queue("geoserver.events", geonode_task_exchange)
+geonode_exchange = Exchange("geonode", type="topic")
+
+queue_all_events = Queue("broadcast", geonode_exchange, routing_key="#")
+queue_geoserver_events = Queue("geoserver.events", geonode_exchange, routing_key="geoserver")
+queue_notifications_events = Queue("notifications.events", geonode_exchange, routing_key="notifications")

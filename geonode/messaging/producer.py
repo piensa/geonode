@@ -1,20 +1,39 @@
 from __future__ import with_statement
 
 from geonode.settings import BROKER_URL
-from queues import geonode_task_exchange
+from queues import geonode_exchange, queue_notifications_events
 
+from kombu import BrokerConnection
 from kombu.common import maybe_declare
 from kombu.pools import producers
 
-if __name__ == "__main__":
-    from kombu import BrokerConnection
+connection = BrokerConnection(BROKER_URL)
 
-    connection = BrokerConnection(BROKER_URL)
 
+def geoserver_upload_layer(layer_id):
     with producers[connection].acquire(block=True) as producer:
-        maybe_declare(geonode_task_exchange, producer.channel)
+        maybe_declare(geonode_exchange, producer.channel)
 
-        payload = {"operation": "create", "content": "the object"}
-        producer.publish(payload, exchange='geonode', serializer="json",
-                         routing_key='ROUTING_KEY')
+        payload = {"layer_id": layer_id}
+        producer.publish(
+            payload,
+            exchange='geonode',
+            serializer='json',
+            routing_key='geoserver'
+        )
 
+
+def notifications_send(instance_id, app_label, model, created=None):
+    with producers[connection].acquire(block=True) as producer:
+        maybe_declare(queue_notifications_events, producer.channel)
+
+        payload = {"instance_id": instance_id,
+                   "app_label": app_label,
+                   "model": model,
+                   "created": created}
+        producer.publish(
+            payload,
+            exchange='geonode',
+            serializer='json',
+            routing_key='notifications'
+        )

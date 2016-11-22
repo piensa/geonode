@@ -27,6 +27,7 @@ from collections import defaultdict
 from dialogos.models import Comment
 
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import signals
 from django.utils.translation import ugettext as _
 
@@ -156,12 +157,19 @@ if activity:
 if notification_app:
 
     def notification_post_save_resource(instance, sender, created, **kwargs):
-        pass
+        from geonode.messaging.producer import notifications_send
+        ct = ContentType.objects.get_for_model(sender)
+        notifications_send(instance.id, ct.app_label, ct.model, created=created)
 
-    def notification_post_save_resource2(instance, sender, created, **kwargs):
+
+    def notification_post_save_resource2(instance_id, app_label, model, created, **kwargs):
         """ Send a notification when a layer, map or document is created or
         updated
         """
+        ct = ContentType.objects.get(app_label=app_label, model=model)
+        instance_class = ct.model_class()
+        instance = instance_class.objects.get(id=instance_id)
+
         notice_type_label = '%s_created' if created else '%s_updated'
         notice_type_label = notice_type_label % instance.class_name.lower()
         recipients = get_notification_recipients(notice_type_label)

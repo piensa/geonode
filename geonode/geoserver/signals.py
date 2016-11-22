@@ -66,9 +66,10 @@ def geoserver_pre_save(instance, sender, **kwargs):
 
 
 def geoserver_post_save(instance, sender, **kwargs):
-    pass
+    from geonode.messaging import producer
+    producer.geoserver_upload_layer(instance.id)
 
-def geoserver_post_save2(instance, sender, **kwargs):
+def geoserver_post_save2(layer_id):
     """Save keywords to GeoServer
 
        The way keywords are implemented requires the layer
@@ -86,6 +87,9 @@ def geoserver_post_save2(instance, sender, **kwargs):
             * Point of Contact name and url
         """
 
+    from geonode.layers.models import Layer
+    instance = Layer.objects.get(id=layer_id)
+
     # Don't run this signal if is a Layer from a remote service
     if getattr(instance, "service", None) is not None:
         return
@@ -100,6 +104,8 @@ def geoserver_post_save2(instance, sender, **kwargs):
         # There is no need to process it if there is not file.
         if base_file is None:
             return
+
+
         gs_name, workspace, values, gs_resource = geoserver_upload(instance,
                                                                    base_file.file.path,
                                                                    instance.owner,
@@ -109,6 +115,8 @@ def geoserver_post_save2(instance, sender, **kwargs):
                                                                    abstract=instance.abstract,
                                                                    # keywords=instance.keywords,
                                                                    charset=instance.charset)
+
+
         # Set fields obtained via the geoserver upload.
         instance.name = gs_name
         instance.workspace = workspace
@@ -138,6 +146,8 @@ def geoserver_post_save2(instance, sender, **kwargs):
     # ogc_server_settings.BACKEND_WRITE_ENABLED == True
     if gs_resource and getattr(ogc_server_settings, "BACKEND_WRITE_ENABLED",
                                True):
+
+
         gs_catalog.save(gs_resource)
 
     gs_layer = gs_catalog.get_layer(instance.name)
@@ -156,6 +166,8 @@ def geoserver_post_save2(instance, sender, **kwargs):
         # gs_layer should only be called if
         # ogc_server_settings.BACKEND_WRITE_ENABLED == True
         if getattr(ogc_server_settings, "BACKEND_WRITE_ENABLED", True):
+
+
             gs_catalog.save(gs_layer)
 
     """Get information from geoserver.
