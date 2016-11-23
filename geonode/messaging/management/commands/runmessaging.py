@@ -18,12 +18,16 @@
 #
 #########################################################################
 
-from django.core.management.base import BaseCommand
-from optparse import make_option
+import logging
 import sys
+from optparse import make_option
 
+from django.core.management.base import BaseCommand
 from geonode.settings import BROKER_URL
 
+logger = logging.getLogger(__package__)
+logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.setLevel(logging.DEBUG)
 
 class Command(BaseCommand):
     help = 'Start the MQ consumer to perform non blocking tasks'
@@ -41,19 +45,13 @@ class Command(BaseCommand):
         ignore_errors = options.get('ignore_errors')
         verbosity = int(options.get('verbosity'))
 
-        if verbosity > 0:
-            console = sys.stdout
-            print "Verbosity is", verbosity
-        else:
-            console = None
-
         from kombu import BrokerConnection
         from geonode.messaging.consumer import Consumer
 
         with BrokerConnection(BROKER_URL) as connection:
             try:
-                print ("Consumer starting.")
+                logger.info("Consumer starting.")
                 worker = Consumer(connection)
                 worker.run()
             except KeyboardInterrupt:
-                print ("Consumer stopped.")
+                logger.info("Consumer stopped.")

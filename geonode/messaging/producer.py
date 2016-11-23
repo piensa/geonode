@@ -1,11 +1,10 @@
 from __future__ import with_statement
 
 from geonode.settings import BROKER_URL
-from queues import geonode_exchange, queue_notifications_events
-
 from kombu import BrokerConnection
 from kombu.common import maybe_declare
 from kombu.pools import producers
+from queues import geonode_exchange, queue_notifications_events
 
 connection = BrokerConnection(BROKER_URL)
 

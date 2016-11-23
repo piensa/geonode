@@ -1,8 +1,14 @@
+import logging
+import sys
+
 from geonode.geoserver.signals import geoserver_post_save2
 from geonode.social.signals import notification_post_save_resource2
-from queues import queue_geoserver_events, queue_notifications_events, queue_all_events
 from kombu.mixins import ConsumerMixin
+from queues import queue_geoserver_events, queue_notifications_events, queue_all_events
 
+logger = logging.getLogger(__package__)
+logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.setLevel(logging.DEBUG)
 
 class Consumer(ConsumerMixin):
     def __init__(self, connection):
@@ -21,38 +27,39 @@ class Consumer(ConsumerMixin):
 
     def on_consume_end(self, connection, channel):
         super(Consumer, self).on_consume_end(connection, channel)
-        print "Finished >>>"
+        logger.info("finished.")
         print channel
 
     def on_message(self, body, message):
-        print ("broadcast: RECEIVED MSG - body: %r" % (body,))
+        logger.info("broadcast: RECEIVED MSG - body: %r" % (body,))
         message.ack()
         return
 
     def on_geoserver_messages(self, body, message):
-        print ("on_geoserver_messages: RECEIVED MSG - body: %r" % (body,))
+        logger.info("on_geoserver_messages: RECEIVED MSG - body: %r" % (body,))
         layer_id = body.get("layer_id")
         geoserver_post_save2(layer_id)
         message.ack()
-        print ("on_geoserver_messages: finished")
+        logger.info("on_geoserver_messages: finished")
         return
 
     def on_notifications_message(self, body, message):
-        print ("on_notifications_message: RECEIVED MSG - body: %r" % (body,))
+        logger.info("on_notifications_message: RECEIVED MSG - body: %r" % (body,))
         instance_id = body.get("instance_id")
         app_label = body.get("app_label")
         model = body.get("model")
         created = body.get("created")
         notification_post_save_resource2(instance_id, app_label, model, created)
         message.ack()
-        print ("on_notifications_message: finished")
+        logger.info("on_notifications_message: finished")
         return
 
     def on_consume_ready(self, connection, channel, consumers, **kwargs):
-        print ">>> Ready:"
-        print connection
-        print len(consumers), "consumers:"
+        logger.info(">>> Ready:")
+        logger.info(connection)
+        logger.info("{} consumers:".format(len(consumers)))
         for i, consumer in enumerate(consumers, start=1):
-            print i, consumer
+            logger.info("{0} {1}".format(i, consumer))
+
         super(Consumer, self).on_consume_ready(connection, channel, consumers,
                                                **kwargs)
