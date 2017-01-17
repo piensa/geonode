@@ -18,28 +18,35 @@
 #
 #########################################################################
 
-import logging
-import os
-import httplib2
 import base64
-import math
 import copy
-import string
+import datetime
+import logging
+import math
+import os
 import re
+import uuid
+
 from osgeo import ogr
 from slugify import Slugify
+import string
 
 from django.conf import settings
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
-from django.utils.translation import ugettext_lazy as _
+from django.http import Http404
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.utils.translation import ugettext_lazy as _
+import httplib2
+import urlparse
+import urllib
+
+
 try:
     import json
 except ImportError:
     from django.utils import simplejson as json
-from django.http import HttpResponse
-from django.core.cache import cache
-from django.http import Http404
 
 DEFAULT_TITLE = ""
 DEFAULT_ABSTRACT = ""
@@ -197,7 +204,7 @@ def layer_from_viewer_config(model, layer, source, ordering):
 
 class GXPMapBase(object):
 
-    def viewer_json(self, user, *added_layers):
+    def viewer_json(self, user, access_token, *added_layers):
         """
         Convert this map to a nested dictionary structure matching the JSON
         configuration for GXP Viewers.
@@ -236,7 +243,7 @@ class GXPMapBase(object):
                     results.append(x)
             return results
 
-        configs = [l.source_config() for l in layers]
+        configs = [l.source_config(access_token) for l in layers]
 
         i = 0
         for source in uniqify(configs):
@@ -253,7 +260,7 @@ class GXPMapBase(object):
 
         def layer_config(l, user=None):
             cfg = l.layer_config(user=user)
-            src_cfg = l.source_config()
+            src_cfg = l.source_config(access_token)
             source = source_lookup(src_cfg)
             if source:
                 cfg["source"] = source
@@ -320,7 +327,7 @@ class GXPMapBase(object):
             # Mark the last added layer as selected - important for data page
             config["map"]["layers"][len(layers) - 1]["selected"] = True
         else:
-            (def_map_config, def_map_layers) = default_map_config()
+            (def_map_config, def_map_layers) = default_map_config(None)
             config = def_map_config
             layers = def_map_layers
 
@@ -355,7 +362,7 @@ class GXPMap(GXPMapBase):
 
 class GXPLayerBase(object):
 
-    def source_config(self):
+    def source_config(self, access_token):
         """
         Generate a dict that can be serialized to a GXP layer source
         configuration suitable for loading this layer.
@@ -366,7 +373,29 @@ class GXPLayerBase(object):
             cfg = dict(ptype="gxp_wmscsource", restUrl="/gs/rest")
 
         if self.ows_url:
-            cfg["url"] = self.ows_url
+            '''
+            This limits the access token we add to only the OGC servers decalred in OGC_SERVER.
+            Will also override any access_token in the request and replace it with an existing one.
+            '''
+            urls = []
+            for name, server in settings.OGC_SERVER.iteritems():
+                url = urlparse.urlsplit(server['PUBLIC_LOCATION'])
+                urls.append(url.netloc)
+
+            my_url = urlparse.urlsplit(self.ows_url)
+
+            if access_token and my_url.netloc in urls:
+                request_params = urlparse.parse_qs(my_url.query)
+                if 'access_token' in request_params:
+                    del request_params['access_token']
+                request_params['access_token'] = [access_token]
+                encoded_params = urllib.urlencode(request_params, doseq=True)
+
+                parsed_url = urlparse.SplitResult(my_url.scheme, my_url.netloc, my_url.path,
+                                                  encoded_params, my_url.fragment)
+                cfg["url"] = parsed_url.geturl()
+            else:
+                cfg["url"] = self.ows_url
 
         return cfg
 
@@ -425,7 +454,7 @@ class GXPLayer(GXPLayerBase):
             setattr(self, k, kw[k])
 
 
-def default_map_config():
+def default_map_config(request):
     if getattr(settings, 'DEFAULT_MAP_CRS', 'EPSG:900913') == "EPSG:4326":
         _DEFAULT_MAP_CENTER = inverse_mercator(settings.DEFAULT_MAP_CENTER)
     else:
@@ -452,7 +481,17 @@ def default_map_config():
         _baselayer(
             lyr, idx) for idx, lyr in enumerate(
             settings.MAP_BASELAYERS)]
-    DEFAULT_MAP_CONFIG = _default_map.viewer_json(None, *DEFAULT_BASE_LAYERS)
+    user = None
+    access_token = None
+    if request:
+        user = request.user
+        if 'access_token' in request.session:
+            access_token = request.session['access_token']
+        else:
+            u = uuid.uuid1()
+            access_token = u.hex
+
+    DEFAULT_MAP_CONFIG = _default_map.viewer_json(user, access_token, *DEFAULT_BASE_LAYERS)
 
     return DEFAULT_MAP_CONFIG, DEFAULT_BASE_LAYERS
 
@@ -604,7 +643,7 @@ def build_caveats(resourcebase):
     if resourcebase.data_quality_statement:
         caveats.append(resourcebase.data_quality_statement)
     if len(caveats) > 0:
-        return u"- "+u"%0A- ".join(caveats)
+        return u"- " + u"%0A- ".join(caveats)
     else:
         return u""
 
@@ -675,14 +714,14 @@ def check_shp_columnnames(layer):
                 new_field_name = custom_slugify(field_name)
 
                 if not b.match(new_field_name):
-                    new_field_name = '_'+new_field_name
+                    new_field_name = '_' + new_field_name
                 j = 0
                 while new_field_name in list_col_original or new_field_name in list_col.values():
                     if j == 0:
                         new_field_name += '_0'
-                    if new_field_name.endswith('_'+str(j)):
+                    if new_field_name.endswith('_' + str(j)):
                         j += 1
-                        new_field_name = new_field_name[:-2]+'_'+str(j)
+                        new_field_name = new_field_name[:-2] + '_' + str(j)
                 list_col.update({field_name: new_field_name})
     except UnicodeDecodeError as e:
         print str(e)
@@ -695,3 +734,85 @@ def check_shp_columnnames(layer):
             qry = u"ALTER TABLE {0} RENAME COLUMN \"{1}\" TO \"{2}\"".format(inLayer.GetName(), key, list_col[key])
             inDataSource.ExecuteSQL(qry.encode(layer.charset))
     return True, None, list_col
+
+
+def set_attributes(layer, attribute_map, overwrite=False, attribute_stats=None):
+    """ *layer*: a geonode.layers.models.Layer instance
+        *attribute_map*: a list of 2-lists specifying attribute names and types,
+            example: [ ['id', 'Integer'], ... ]
+        *overwrite*: replace existing attributes with new values if name/type matches.
+        *attribute_stats*: dictionary of return values from get_attribute_statistics(),
+            of the form to get values by referencing attribute_stats[<layer_name>][<field_name>].
+    """
+    # Some import dependency tweaking; functions in this module are used before
+    # models are fully set up so Attribute has to be imported here.
+    from geonode.layers.models import Attribute
+
+    # we need 3 more items; description, attribute_label, and display_order
+    attribute_map_dict = {
+        'field': 0,
+        'ftype': 1,
+        'description': 2,
+        'label': 3,
+        'display_order': 4,
+    }
+    for attribute in attribute_map:
+        attribute.extend((None, None, 0))
+
+    attributes = layer.attribute_set.all()
+    # Delete existing attributes if they no longer exist in an updated layer
+    for la in attributes:
+        lafound = False
+        for attribute in attribute_map:
+            field, ftype, description, label, display_order = attribute
+            if field == la.attribute:
+                lafound = True
+                # store description and attribute_label in attribute_map
+                attribute[attribute_map_dict['description']] = la.description
+                attribute[attribute_map_dict['label']] = la.attribute_label
+                attribute[attribute_map_dict['display_order']] = la.display_order
+        if overwrite or not lafound:
+            logger.debug(
+                "Going to delete [%s] for [%s]",
+                la.attribute,
+                layer.name.encode('utf-8'))
+            la.delete()
+
+    # Add new layer attributes if they don't already exist
+    if attribute_map is not None:
+        iter = len(Attribute.objects.filter(layer=layer)) + 1
+        for attribute in attribute_map:
+            field, ftype, description, label, display_order = attribute
+            if field is not None:
+                la, created = Attribute.objects.get_or_create(
+                    layer=layer, attribute=field, attribute_type=ftype,
+                    description=description, attribute_label=label,
+                    display_order=display_order)
+                if created:
+                    if (not attribute_stats or layer.name not in attribute_stats or
+                            field not in attribute_stats[layer.name]):
+                        result = None
+                    else:
+                        result = attribute_stats[layer.name][field]
+
+                    if result is not None:
+                        logger.debug("Generating layer attribute statistics")
+                        la.count = result['Count']
+                        la.min = result['Min']
+                        la.max = result['Max']
+                        la.average = result['Average']
+                        la.median = result['Median']
+                        la.stddev = result['StandardDeviation']
+                        la.sum = result['Sum']
+                        la.unique_values = result['unique_values']
+                        la.last_stats_updated = datetime.datetime.now()
+                    la.visible = ftype.find("gml:") != 0
+                    la.display_order = iter
+                    la.save()
+                    iter += 1
+                    logger.debug(
+                        "Created [%s] attribute for [%s]",
+                        field,
+                        layer.name.encode('utf-8'))
+    else:
+        logger.debug("No attributes found")

@@ -29,7 +29,7 @@ from django.utils.translation import ugettext
 from django.conf import settings
 
 from geonode.geoserver.ows import wcs_links, wfs_links, wms_links
-from geonode.geoserver.helpers import cascading_delete, set_attributes
+from geonode.geoserver.helpers import cascading_delete, set_attributes_from_geoserver
 from geonode.geoserver.helpers import set_styles, gs_catalog
 from geonode.geoserver.helpers import ogc_server_settings
 from geonode.geoserver.helpers import geoserver_upload, http_client
@@ -92,6 +92,11 @@ def geoserver_post_save2(layer_id):
 
     # Don't run this signal if is a Layer from a remote service
     if getattr(instance, "service", None) is not None:
+        return
+
+    # Don't run this signal handler if it is a tile layer
+    #    Currently only gpkg files containing tiles will have this type & will be served via MapProxy.
+    if hasattr(instance, 'storeType') and getattr(instance, 'storeType') == 'tileStore':
         return
 
     gs_resource = None
@@ -198,7 +203,6 @@ def geoserver_post_save2(layer_id):
         # store the resource to avoid another geoserver call in the post_save
         instance.gs_resource = gs_resource
 
-
     if type(instance) is ResourceBase:
         if hasattr(instance, 'layer'):
             instance = instance.layer
@@ -207,7 +211,7 @@ def geoserver_post_save2(layer_id):
 
     if instance.storeType == "remoteStore":
         # Save layer attributes
-        set_attributes(instance)
+        set_attributes_from_geoserver(instance)
         return
 
     if not getattr(instance, 'gs_resource', None):
@@ -496,7 +500,7 @@ def geoserver_post_save2(layer_id):
         Link.objects.filter(pk=link.pk).update(url=tile_url)
 
     # Save layer attributes
-    set_attributes(instance)
+    set_attributes_from_geoserver(instance)
 
     # Save layer styles
     set_styles(instance, gs_catalog)
