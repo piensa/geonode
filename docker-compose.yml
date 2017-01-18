@@ -31,7 +31,7 @@ services:
       - ./scripts/docker/env/production/django.env
 
   geoserver:
-    image: geonode/geoserver:2.9.x-oauth2
+    build: geoserver-docker
     links:
       - postgres
     ports:
@@ -41,7 +41,7 @@ services:
     env_file:
       - ./scripts/docker/env/production/geoserver.env
 
-  nginx:
+  geonode:
     image: geonode/nginx:geoserver
     links:
       - django
