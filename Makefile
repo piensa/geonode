@@ -1,6 +1,9 @@
 up:
 	# bring up the services
 	docker-compose up -d
+	#geonode authentication in geoserver
+	docker-compose exec geoserver bash -c "sh setup_auth.sh"
+
 
 build:
 	docker-compose build django
@@ -12,6 +15,14 @@ sync: up
 	docker-compose exec django django-admin.py migrate account --noinput
 	docker-compose exec django django-admin.py migrate --noinput
 	docker-compose exec django django-admin.py loaddata sample_admin
+
+migrate:
+	django-admin.py makemigrations --noinput
+	django-admin.py migrate account --noinput
+	django-admin.py migrate --noinput
+
+migrate_setup: migrate
+	django-admin.py loaddata sample_admin
 
 wait:
 	sleep 5
