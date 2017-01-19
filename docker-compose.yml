@@ -29,9 +29,19 @@ services:
     command: celery worker --app=geonode.celery_app:app -B -l INFO
     env_file:
       - ./scripts/docker/env/production/django.env
+           
+  consumers:
+    image: geonode/django
+    links:
+      - rabbitmq
+      - postgres
+      - elasticsearch
+    command: python manage.py runmessaging
+    env_file:
+      - ./scripts/docker/env/production/django.env
 
   geoserver:
-    image: geonode/geoserver
+    image: waybarrios/geoserver:piensa
     links:
       - postgres
     ports:
@@ -41,7 +51,7 @@ services:
     env_file:
       - ./scripts/docker/env/production/geoserver.env
 
-  nginx:
+  geonode:
     image: geonode/nginx:geoserver
     links:
       - django
@@ -50,7 +60,7 @@ services:
       - "80:80"
 
   data_dir_conf:
-    image: geonode/geoserver_data
+    image: geonode/geoserver_data:2.9.x-oauth2
     container_name: geoserver_data_dir
     command: /bin/true
     volumes:

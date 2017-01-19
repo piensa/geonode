@@ -1,9 +1,6 @@
 up:
 	# bring up the services
 	docker-compose up -d
-	#geonode authentication in geoserver
-	docker-compose exec geoserver bash -c "sh setup_auth.sh"
-
 
 build:
 	docker-compose build django
@@ -15,6 +12,9 @@ sync: up
 	docker-compose exec django django-admin.py migrate account --noinput
 	docker-compose exec django django-admin.py migrate --noinput
 	docker-compose exec django django-admin.py loaddata sample_admin
+	docker-compose exec django django-admin.py loaddata geonode/base/fixtures/default_oauth_apps_docker.json
+	docker-compose exec django django-admin.py loaddata geonode/base/fixtures/initial_data.json
+	docker-compose exec django django-admin.py layer_notice_types
 
 migrate:
 	django-admin.py makemigrations --noinput
