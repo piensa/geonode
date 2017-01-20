@@ -2,9 +2,10 @@ import logging
 import sys
 
 from geonode.geoserver.signals import geoserver_post_save2
+from geonode.security.views import send_email_consumer
 from geonode.social.signals import notification_post_save_resource2
 from kombu.mixins import ConsumerMixin
-from queues import queue_geoserver_events, queue_notifications_events, queue_all_events
+from queues import queue_email_events, queue_geoserver_events, queue_notifications_events, queue_all_events
 
 logger = logging.getLogger(__package__)
 logger.addHandler(logging.StreamHandler(sys.stdout))
@@ -19,10 +20,12 @@ class Consumer(ConsumerMixin):
         return [
             Consumer(queue_all_events,
                      callbacks=[self.on_message]),
+            Consumer(queue_email_events,
+                     callbacks=[self.on_email_messages]),
             Consumer(queue_geoserver_events,
                      callbacks=[self.on_geoserver_messages]),
             Consumer(queue_notifications_events,
-                     callbacks=[self.on_notifications_message]),
+                     callbacks=[self.on_notifications_messages]),
         ]
 
     def on_consume_end(self, connection, channel):
@@ -35,6 +38,15 @@ class Consumer(ConsumerMixin):
         message.ack()
         return
 
+    def on_email_messages(self, body, message):
+        logger.info("on_email_messages: RECEIVED MSG - body: %r" % (body,))
+        layer_uuid = body.get("layer_uuid")
+        user_id = body.get("user_id")
+        send_email_consumer(layer_uuid, user_id)
+        message.ack()
+        logger.info("on_email_messages: finished")
+
+
     def on_geoserver_messages(self, body, message):
         logger.info("on_geoserver_messages: RECEIVED MSG - body: %r" % (body,))
         layer_id = body.get("layer_id")
@@ -43,7 +55,7 @@ class Consumer(ConsumerMixin):
         logger.info("on_geoserver_messages: finished")
         return
 
-    def on_notifications_message(self, body, message):
+    def on_notifications_messages(self, body, message):
         logger.info("on_notifications_message: RECEIVED MSG - body: %r" % (body,))
         instance_id = body.get("instance_id")
         app_label = body.get("app_label")

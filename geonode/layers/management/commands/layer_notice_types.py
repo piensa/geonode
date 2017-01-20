@@ -47,5 +47,10 @@ class Command(BaseCommand):
             "layer_rated",
             _("Rating for Layer"),
             _("A rating was given to a layer"))
+        notification.models.NoticeType.create(
+            "request_download_resourcebase",
+            _("Request download to an owner"),
+            _("A request has been sent to the owner"))
+
 
     print('Done')
