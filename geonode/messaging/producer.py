@@ -19,7 +19,7 @@ def send_email_producer(layer_uuid, user_id):
         }
         producer.publish(
             payload,
-            exchange='testExchange',
+            exchange='geonode',
             serializer='json',
             routing_key='email'
         )
@@ -32,9 +32,9 @@ def geoserver_upload_layer(layer_id):
         payload = {"layer_id": layer_id}
         producer.publish(
             payload,
-            exchange='testExchange',
+            exchange='geonode',
             serializer='json',
-            routing_key='geoserver'
+            routing_key='geonode.geoserver'
         )
 
 
@@ -48,7 +48,7 @@ def notifications_send(instance_id, app_label, model, created=None):
                    "created": created}
         producer.publish(
             payload,
-            exchange='testExchange',
+            exchange='geonode',
             serializer='json',
             routing_key='notifications'
         )
