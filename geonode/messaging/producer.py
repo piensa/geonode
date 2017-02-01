@@ -4,7 +4,9 @@ from geonode.settings import BROKER_URL
 from kombu import BrokerConnection
 from kombu.common import maybe_declare
 from kombu.pools import producers
-from queues import queue_email_events, queue_geoserver_events, queue_notifications_events
+from queues import queue_email_events, queue_geoserver_events,\
+                   queue_notifications_events
+
 
 connection = BrokerConnection(BROKER_URL)
 
@@ -52,3 +54,18 @@ def notifications_send(instance_id, app_label, model, created=None):
             serializer='json',
             routing_key='notifications'
         )
+
+def viewing_layer(user,owner,layer_id):
+     with producers[connection].acquire(block=True) as producer:
+        maybe_declare(queue_favorite_events, producer.channel)
+
+        payload = {"viewer": user,
+                   "owner_layer": owner,
+                   "layer_id": layer_id}
+        producer.publish(
+            payload,
+            exchange='geonode',
+            serializer='json',
+            routing_key='geonode.viewer'
+        )
+

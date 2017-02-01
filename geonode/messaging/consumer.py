@@ -2,12 +2,14 @@ import logging
 import sys
 
 from geonode.geoserver.signals import geoserver_post_save2
-from geonode.security.views import send_email_consumer
+from geonode.security.views import send_email_consumer, send_email_owner_on_view
 from geonode.social.signals import notification_post_save_resource2
+from geonode.layers.views import layer_view_counter
 from kombu.mixins import ConsumerMixin
 from queues import queue_email_events, queue_geoserver_events,\
                    queue_notifications_events, queue_all_events,\
-                   queue_geoserver_catalog, queue_geoserver_data,queue_geoserver
+                   queue_geoserver_catalog, queue_geoserver_data,\
+                   queue_geoserver,queue_layer_viewers
 
 logger = logging.getLogger(__package__)
 logger.addHandler(logging.StreamHandler(sys.stdout))
@@ -34,7 +36,8 @@ class Consumer(ConsumerMixin):
                      callbacks=[self.on_geoserver_data]),
             Consumer(queue_geoserver,
                      callbacks=[self.on_geoserver_all]),
-
+            Consumer(queue_layer_viewers,
+                     callbacks=[self.on_layer_viewer]),
         ]
 
     def on_consume_end(self, connection, channel):
@@ -75,7 +78,6 @@ class Consumer(ConsumerMixin):
         model = body.get("model")
         created = body.get("created")
         notification_post_save_resource2(instance_id, app_label, model, created)
-        # Not sure if we need to send ack on this fanout version.
         message.ack()
         logger.info("on_notifications_message: finished")
         return
@@ -109,20 +111,15 @@ class Consumer(ConsumerMixin):
         super(Consumer, self).on_consume_ready(connection, channel, consumers,
                                                **kwargs)
 
-    def checking_broadcasting (self,broadcast_queue,single_queue):
-        """
-        Inputs:
-        * Broadcast queue which listens everything i.e: routing_key= geoserver.#
-        * Single queue: if this single queue belongs to broadcast queue, i.e:
-            - routing_key= geoserver.catalog
-            - routing_key= geoserver.data
-            - routing_key= geoserver."whatever"
+    def on_layer_viewer(self,body,message):
+        logger.info("on_layer_viewer: RECEIVED MSG - body: %r" % (body,))
+        viewer = body.get("viewer")
+        owner_layer = body.get("owner_layer")
+        layer_id = body.get ("layer_id")
+        layer_view_counter(layer_id)
+        send_email_owner_on_view(owner_layer,viewer,layer_id)
+        message.ack()
+        logger.info("on_layer_viewer: finished")
 
-        Output: [Boolean] True or False
-                Depends on single queue belongs (or not) to broadcast queue
-        """
+        return
 
-        if broadcast_queue.split('.')[0] == single_queue.split('.')[0]:
-            return True
-
-        return False
