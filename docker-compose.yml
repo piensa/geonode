@@ -41,9 +41,10 @@ services:
       - ./scripts/docker/env/production/django.env
 
   geoserver:
-    image: waybarrios/geoserver:piensa
+    image: waybarrios/geoserver:topic_notif
     links:
       - postgres
+      - rabbitmq
     ports:
       - "8080"
     volumes_from:
