@@ -282,7 +282,7 @@ class Map(ResourceBase, GXPMapBase):
         # Save again to persist the zoom and bbox changes and
         # to generate the thumbnail.
         self.save()
-
+    
     @property
     def class_name(self):
         return self.__class__.__name__

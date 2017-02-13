@@ -26,6 +26,8 @@ import shutil
 import traceback
 import uuid
 import decimal
+import time
+
 
 from guardian.shortcuts import get_perms
 from django.contrib import messages
@@ -131,6 +133,7 @@ def _resolve_layer(request, typename, permission='base.view_resourcebase',
 
 @login_required
 def layer_upload(request, template='upload/layer_upload.html'):
+    start_time = time.time()
     if request.method == 'GET':
         mosaics = Layer.objects.filter(is_mosaic=True).order_by('name')
         ctx = {
@@ -138,6 +141,7 @@ def layer_upload(request, template='upload/layer_upload.html'):
             'charsets': CHARSETS,
             'is_layer': True,
         }
+        print("--- ll1: %s seconds ---" % (time.time() - start_time))
         return render_to_response(template, RequestContext(request, ctx))
     elif request.method == 'POST':
         form = NewLayerUploadForm(request.POST, request.FILES)
@@ -170,6 +174,7 @@ def layer_upload(request, template='upload/layer_upload.html'):
                     title=form.cleaned_data["layer_title"],
                     metadata_uploaded_preserve=form.cleaned_data["metadata_uploaded_preserve"]
                 )
+
             except Exception as e:
                 exception_type, error, tb = sys.exc_info()
                 logger.exception(e)
@@ -211,10 +216,13 @@ def layer_upload(request, template='upload/layer_upload.html'):
             status_code = 200
         else:
             status_code = 400
+        print("--- ll2: %s seconds ---" % (time.time() - start_time))
         return HttpResponse(
             json.dumps(out),
             content_type='application/json',
             status=status_code)
+
+
 
 
 def layer_detail(request, layername, template='layers/layer_detail.html'):

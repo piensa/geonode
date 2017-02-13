@@ -17,7 +17,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 #########################################################################
-
+import time 
 import logging
 import os
 import uuid
@@ -151,6 +151,7 @@ def get_related_documents(resource):
 
 
 def pre_save_document(instance, sender, **kwargs):
+    start_time = time.time()
     base_name, extension, doc_type = None, None, None
 
     if instance.doc_file:
@@ -190,10 +191,10 @@ def pre_save_document(instance, sender, **kwargs):
         instance.bbox_x1 = 180
         instance.bbox_y0 = -90
         instance.bbox_y1 = 90
-
+    print("--- presave: %s seconds ---" % (time.time() - start_time))
 
 def post_save_document(instance, *args, **kwargs):
-
+    start_time = time.time()
     name = None
     ext = instance.extension
     mime_type_map = DOCUMENT_MIMETYPE_MAP
@@ -220,13 +221,15 @@ def post_save_document(instance, *args, **kwargs):
                 mime=mime,
                 url=url,
                 link_type='data',))
+    print("--- postsave: %s seconds ---" % (time.time() - start_time))
 
 
 def create_thumbnail(sender, instance, created, **kwargs):
+    start_time = time.time()
     from geonode.tasks.update import create_document_thumbnail
 
     create_document_thumbnail.delay(object_id=instance.id)
-
+    print("--- thumbnail: %s seconds ---" % (time.time() - start_time))
 
 def update_documents_extent(sender, **kwargs):
     model = 'map' if isinstance(sender, Map) else 'layer'
@@ -239,9 +242,11 @@ def pre_delete_document(instance, sender, **kwargs):
     remove_object_permissions(instance.get_self_resource())
 
 
+
 signals.pre_save.connect(pre_save_document, sender=Document)
 signals.post_save.connect(create_thumbnail, sender=Document)
 signals.post_save.connect(post_save_document, sender=Document)
 signals.post_save.connect(resourcebase_post_save, sender=Document)
 signals.pre_delete.connect(pre_delete_document, sender=Document)
 map_changed_signal.connect(update_documents_extent)
+

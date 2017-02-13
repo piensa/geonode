@@ -59,6 +59,7 @@ class Consumer(ConsumerMixin):
         # Not sure if we need to send ack on this fanout version.
         message.ack()
         logger.info("on_email_messages: finished")
+
         return
 
 
@@ -68,7 +69,6 @@ class Consumer(ConsumerMixin):
         geoserver_post_save2(layer_id)
         # Not sure if we need to send ack on this fanout version.
         message.ack()
-        logger.info("on_geoserver_messages: finished")
         return
 
     def on_notifications_messages(self, body, message):
@@ -120,6 +120,6 @@ class Consumer(ConsumerMixin):
         send_email_owner_on_view(owner_layer,viewer,layer_id)
         message.ack()
         logger.info("on_layer_viewer: finished")
-
         return
+
 

@@ -42,6 +42,12 @@ def favorite(req, subject, id):
     method is idempotent, Favorite's create_favorite method
     only creates if does not already exist.
     """
+    from geonode.messaging import producer
+    producer.create_favorite(req,subject,id)
+    
+@login_required
+def create_favorite_event(subject,user,id):
+
     if subject == 'document':
         obj = get_object_or_404(Document, pk=id)
     elif subject == 'map':
@@ -51,7 +57,7 @@ def favorite(req, subject, id):
     elif subject == 'user':
         obj = get_object_or_404(settings.AUTH_USER_MODEL, pk=id)
 
-    favorite = models.Favorite.objects.create_favorite(obj, req.user)
+    favorite = models.Favorite.objects.create_favorite(obj, user)
     delete_url = reverse("delete_favorite", args=[favorite.pk])
     response = {"has_favorite": "true", "delete_url": delete_url}
 

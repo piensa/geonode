@@ -9,7 +9,8 @@ from queues import queue_email_events, queue_geoserver_events,\
 
 
 connection = BrokerConnection(BROKER_URL)
-
+import time
+    
 
 def send_email_producer(layer_uuid, user_id):
     with producers[connection].acquire(block=True) as producer:
@@ -28,6 +29,7 @@ def send_email_producer(layer_uuid, user_id):
 
 
 def geoserver_upload_layer(layer_id):
+    start_time = time.time()
     with producers[connection].acquire(block=True) as producer:
         maybe_declare(queue_geoserver_events, producer.channel)
 
@@ -38,6 +40,7 @@ def geoserver_upload_layer(layer_id):
             serializer='json',
             routing_key='geonode.geoserver'
         )
+    print("--- presave geoserver: %s seconds ---" % (time.time() - start_time))
 
 
 def notifications_send(instance_id, app_label, model, created=None):

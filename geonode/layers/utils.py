@@ -28,7 +28,7 @@ import os
 import glob
 import sys
 import tempfile
-
+import time 
 from osgeo import gdal
 
 # Django functionality
@@ -58,6 +58,37 @@ from datetime import datetime
 logger = logging.getLogger('geonode.layers.utils')
 
 _separator = '\n' + ('-' * 100) + '\n'
+
+
+from collections import defaultdict
+from django.db.models.signals import *
+
+
+class DisableSignals(object):
+    def __init__(self, disabled_signals=None):
+        self.stashed_signals = defaultdict(list)
+        self.disabled_signals = disabled_signals or [
+            pre_init, post_init,
+            pre_save, post_save,
+            pre_delete, post_delete,
+            pre_migrate, post_migrate,
+        ]
+
+    def __enter__(self):
+        for signal in self.disabled_signals:
+            self.disconnect(signal)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for signal in self.stashed_signals.keys():
+            self.reconnect(signal)
+
+    def disconnect(self, signal):
+        self.stashed_signals[signal] = signal.receivers
+        signal.receivers = []
+
+    def reconnect(self, signal):
+        signal.receivers = self.stashed_signals.get(signal, [])
+        del self.stashed_signals[signal]
 
 
 def _clean_string(
@@ -92,6 +123,7 @@ def resolve_regions(regions):
 
 
 def get_files(filename):
+    start_time = time.time()
     """Converts the data to Shapefiles or Geotiffs and returns
        a dictionary with all the required files
     """
@@ -179,7 +211,7 @@ def get_files(filename):
             msg = ('Multiple style files (qml) for %s exist; they need to be '
                    'distinct by spelling and not just case.') % filename
             raise GeoNodeException(msg)
-
+    print("--- get_files: %s seconds ---" % (time.time() - start_time))
     return files
 
 
@@ -368,7 +400,6 @@ def extract_tarfile(upload_file, extension='.shp', tempdir=None):
 
     return absolute_base_file
 
-
 def file_upload(filename, name=None, user=None, title=None, abstract=None,
                 keywords=None, category=None, regions=None, date=None,
                 skip=True, overwrite=False, charset='UTF-8',
@@ -376,6 +407,9 @@ def file_upload(filename, name=None, user=None, title=None, abstract=None,
     """Saves a layer in GeoNode asking as little information as possible.
        Only filename is required, user and title are optional.
     """
+    #import ipdb;ipdb.set_trace()
+
+    start_time = time.time()
     if keywords is None:
         keywords = []
     if regions is None:
@@ -411,6 +445,7 @@ def file_upload(filename, name=None, user=None, title=None, abstract=None,
 
     # Add them to the upload session (new file fields are created).
     assigned_name = None
+    print("--- upload1: %s seconds ---" % (time.time() - start_time))
     for type_name, fn in files.items():
         with open(fn, 'rb') as f:
             upload_session.layerfile_set.create(name=type_name,
@@ -442,6 +477,7 @@ def file_upload(filename, name=None, user=None, title=None, abstract=None,
         'is_published': is_published,
         'category': category
     }
+    print("--- upload2: %s seconds ---" % (time.time() - start_time))
 
     # set metadata
     if 'xml' in files:
@@ -468,22 +504,11 @@ def file_upload(filename, name=None, user=None, title=None, abstract=None,
                 defaults[key] = value
             else:
                 defaults[key] = value
-
+    print("--- upload3: %s seconds ---" % (time.time() - start_time))
     regions_resolved, regions_unresolved = resolve_regions(regions)
+    print("--- upload3.5: %s seconds ---" % (time.time() - start_time))
     keywords.extend(regions_unresolved)
 
-    if getattr(settings, 'NLP_ENABLED', False):
-        try:
-            from geonode.contrib.nlp.utils import nlp_extract_metadata_dict
-            nlp_metadata = nlp_extract_metadata_dict({
-                'title': defaults.get('title', None),
-                'abstract': defaults.get('abstract', None),
-                'purpose': defaults.get('purpose', None)})
-            if nlp_metadata:
-                regions_resolved.extend(nlp_metadata.get('regions', []))
-                keywords.extend(nlp_metadata.get('keywords', []))
-        except:
-            print "NLP extraction failed."
 
     # If it is a vector file, create the layer in postgis.
     if is_vector(filename):
@@ -492,12 +517,14 @@ def file_upload(filename, name=None, user=None, title=None, abstract=None,
     # If it is a raster file, get the resolution.
     if is_raster(filename):
         defaults['storeType'] = 'coverageStore'
-
+    print("--- upload3.6: %s seconds ---" % (time.time() - start_time))
     # Create a Django object.
+  
     layer, created = Layer.objects.get_or_create(
-        name=valid_name,
-        defaults=defaults
-    )
+            name=valid_name,
+            defaults=defaults
+        )
+    print("--- upload4: %s seconds ---" % (time.time() - start_time))
 
     # Delete the old layers if overwrite is true
     # and the layer was not just created
@@ -527,6 +554,7 @@ def file_upload(filename, name=None, user=None, title=None, abstract=None,
     if date is not None:
         layer.date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
         layer.save()
+    print("--- upload5: %s seconds ---" % (time.time() - start_time))
 
     return layer
 
@@ -729,3 +757,6 @@ def create_thumbnail(instance, thumbnail_remote_url, thumbnail_create_url=None,
         if image is not None:
             filename = 'layer-%s-thumb.png' % instance.uuid
             instance.save_thumbnail(filename, image=image)
+
+
+

@@ -22,6 +22,7 @@ import errno
 import logging
 import urllib
 
+
 from urlparse import urlparse, urljoin
 from socket import error as socket_error
 
@@ -66,8 +67,11 @@ def geoserver_pre_save(instance, sender, **kwargs):
 
 
 def geoserver_post_save(instance, sender, **kwargs):
+    import time
+    start_time = time.time()
     from geonode.messaging import producer
     producer.geoserver_upload_layer(instance.id)
+    print("--- presave geoserver: %s seconds ---" % (time.time() - start_time))
 
 def geoserver_post_save2(layer_id):
     """Save keywords to GeoServer
