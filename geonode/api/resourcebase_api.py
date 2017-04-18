@@ -63,7 +63,8 @@ FILTER_TYPES.update(LAYER_SUBTYPES)
 
 
 class CommonMetaApi:
-    authorization = GeoNodeAuthorization()
+    if not settings.DISABLE_SECURITY:
+        authorization = GeoNodeAuthorization()
     allowed_methods = ['get']
     filtering = {'title': ALL,
                  'keywords': ALL_WITH_RELATIONS,
@@ -504,7 +505,7 @@ class CommonModelApi(ModelResource):
 
         # If an user does not have at least view permissions, he won't be able to see the resource at all.
         filtered_objects_ids = None
-        if response_objects:
+        if response_objects and not settings.DISABLE_SECURITY:
             filtered_objects_ids = [item.id for item in response_objects if
                                     request.user.has_perm('view_resourcebase', item.get_self_resource())]
         if isinstance(
