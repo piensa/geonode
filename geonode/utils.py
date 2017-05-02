@@ -561,7 +561,8 @@ def resolve_object(request, model, query, permission='base.view_resourcebase',
             allowed = request.user.has_perm(
                 permission,
                 obj_to_check)
-    if not allowed:
+
+    if not allowed and not settings.DISABLE_SECURITY:
         mesg = permission_msg or _('Permission Denied')
         raise PermissionDenied(mesg)
     return obj
