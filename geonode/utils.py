@@ -917,3 +917,47 @@ def resignals():
         for signal in signals:
             signaltype.connect(signal['receiv_call'], sender=signal['sender_ista'],
                                weak=signal['is_weak'], dispatch_uid=signal['uid'])
+
+class WorldmapDatabaseRouter(object):
+    """A router to control all database operations on models in
+    the gazetteer application"""
+
+    apps = ['gazetteer']
+
+    def db_for_read(self, model, **hints):
+        """Point all operations on gazetteer models to gazetteer db"""
+        if model._meta.app_label in self.apps:
+            return settings.GAZETTEER_DB_ALIAS
+        return None
+
+    def db_for_write(self, model, **hints):
+        """Point all operations on gazetteer models to gazetteer db"""
+        if model._meta.app_label in self.apps:
+            return settings.GAZETTEER_DB_ALIAS
+        return None
+
+    def allow_relation(self, obj1, obj2, **hints):
+        """Allow any relation if a model in gazetteer is involved"""
+        if obj1._meta.app_label in self.apps or obj2._meta.app_label in self.apps:
+            return True
+        return None
+
+    def allow_syncdb(self, db, model):
+        """Make sure the gazetteer app only appears on the gazetteer db"""
+        if model._meta.app_label in ['south']:
+            return True
+        if db == settings.GAZETTEER_DB_ALIAS:
+            return model._meta.app_label in self.apps
+        elif model._meta.app_label in self.apps:
+            return False
+        return None
+
+    def allow_migrate(self, db, model):
+        """Make sure the gazetteer app only appears on the gazetteer db"""
+        if model._meta.app_label in ['south']:
+            return True
+        if db == settings.GAZETTEER_DB_ALIAS:
+            return model._meta.app_label in self.apps
+        elif model._meta.app_label in self.apps:
+            return False
+        return None
