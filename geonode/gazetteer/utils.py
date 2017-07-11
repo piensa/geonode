@@ -10,7 +10,7 @@ from geopy import geocoders
 from django.conf import settings
 import psycopg2
 from django.db.models import Q
-from geonode.maps.models import Layer, LayerAttribute, MapLayer, Map
+from geonode.maps.models import Layer, MapLayer, Map
 from django.core.cache import cache
 from geonode.flexidates import parse_julian_date
 import re
@@ -237,7 +237,7 @@ def add_to_gazetteer(layer_name, name_attributes, start_attribute=None,
 
     start_format, julian_start = None, None
     if start_attribute is not None:
-        start_attribute_obj = get_object_or_404(LayerAttribute, layer=layer, attribute=start_attribute)
+        start_attribute_obj = get_object_or_404(Layer.Attribute, layer=layer, attribute=start_attribute)
         start_dates = get_date_format(start_attribute_obj)
         start_format = start_dates[0]
         julian_start = start_dates[1]
@@ -246,7 +246,7 @@ def add_to_gazetteer(layer_name, name_attributes, start_attribute=None,
 
     end_format, julian_end = None, None
     if end_attribute is not None:
-        end_attribute_obj = get_object_or_404(LayerAttribute, layer=layer, attribute=end_attribute)
+        end_attribute_obj = get_object_or_404(Layer.Attribute, layer=layer, attribute=end_attribute)
         end_dates = get_date_format(end_attribute_obj)
         end_format = end_dates[0]
         julian_end = end_dates[1]
@@ -286,7 +286,7 @@ def add_to_gazetteer(layer_name, name_attributes, start_attribute=None,
     """
 
     for name in name_attributes:
-        attribute = get_object_or_404(LayerAttribute, layer=layer, attribute=name)
+        attribute = get_object_or_404(Layer.Attribute, layer=layer, attribute=name)
 
         # detect column type, needed by dblink
         cur = conn.cursor(layer.store)
