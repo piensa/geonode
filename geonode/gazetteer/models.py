@@ -3,9 +3,9 @@ from django.contrib.gis.db import models
 
 # Querying postgis database for features then saving as django model object is
 # significantly slower than doing everything via SQL on postgis database only.
-from south.modelsinspector import add_introspection_rules
+# from django.modelsinspector import add_introspection_rules
 
-add_introspection_rules([], ["^django\.contrib\.gis\.db\.models\.fields\.GeometryField"])
+# add_introspection_rules([], ["^django\.contrib\.gis\.db\.models\.fields\.GeometryField"])
 
 
 class GazetteerEntry(models.Model):
@@ -27,4 +27,3 @@ class GazetteerEntry(models.Model):
 
     class Meta:
         unique_together = (("layer_name", "layer_attribute", "feature_fid"))
-
