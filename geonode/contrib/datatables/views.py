@@ -11,24 +11,25 @@ from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.translation import ugettext_lazy as _
 
-from .models import DataTable, JoinTarget, TableJoin 
+from .models import DataTable, JoinTarget, TableJoin
 from .forms import UploadDataTableForm
 from .utils import process_csv_file, setup_join, create_point_col_from_lat_lon
 
 @login_required
 @csrf_exempt
 def datatable_upload_api(request):
+
     if request.method != 'POST':
-        return HttpResponse("Invalid Request", mimetype="text/plain", status=500)
+        return HttpResponse("Invalid Request", content_type="text/plain", status=500)
     else:
         form = UploadDataTableForm(request.POST, request.FILES)
         if form.is_valid():
             data = form.cleaned_data
             table_name = slugify(unicode(os.path.splitext(os.path.basename(request.FILES['uploaded_file'].name))[0])).replace('-','_')
             instance = DataTable(uploaded_file=request.FILES['uploaded_file'], table_name=table_name, title=table_name)
-            delimiter = data['delimiter_type'] 
+            delimiter = data['delimiter_type']
             no_header_row = data['no_header_row']
-            
+
             instance.save()
             dt, msg = process_csv_file(instance, delimiter=delimiter, no_header_row=no_header_row)
             if dt:
@@ -38,23 +39,23 @@ def datatable_upload_api(request):
                     'success': True,
                     'msg': ""
                 }
-                return HttpResponse(json.dumps(return_dict), mimetype="application/json", status=200) 
+                return HttpResponse(json.dumps(return_dict), content_type="application/json", status=200)
             else:
                 return_dict = {
                     'datatable_id': None,
                     'datatable_name': None,
                     'success': False,
                     'msg': msg
-                } 
-                return HttpResponse(json.dumps(return_dict), mimetype="application/json", status=400) 
+                }
+                return HttpResponse(json.dumps(return_dict), content_type="application/json", status=400)
         else:
             return_dict = {
                 'datatable_id': None,
                 'datatable_name': None,
                 'success': False,
-                'msg': "Form Errors: " + form.errors.as_text() 
+                'msg': "Form Errors: " + form.errors.as_text()
             }
-            return HttpResponse(json.dumps(return_dict), mimetype="application/json", status=400)
+            return HttpResponse(json.dumps(return_dict), content_type="application/json", status=400)
 
 @login_required
 @csrf_exempt
@@ -66,7 +67,7 @@ def datatable_detail(request, dt_id):
     for attribute in attributes:
         attribute_list.append({'attribute':attribute['fields']['attribute'], 'type':attribute['fields']['attribute_type']})
     object["attributes"] = attribute_list
-    data = json.dumps(object) 
+    data = json.dumps(object)
     return HttpResponse(data)
 
 @login_required
@@ -87,19 +88,19 @@ def jointargets(request):
                 kwargs['year__lte'] = request.GET.get('end_year')
             else:
                 return HttpResponse(json.dumps({'success': False, 'msg':'Invalid End Year'}), mimetype="application/json")
-        jts = JoinTarget.objects.filter(**kwargs) 
-        results = [ob.as_json() for ob in jts] 
+        jts = JoinTarget.objects.filter(**kwargs)
+        results = [ob.as_json() for ob in jts]
         return HttpResponse(json.dumps(results), mimetype="application/json")
     else:
         jts = JoinTarget.objects.all()
-        results = [ob.as_json() for ob in jts] 
+        results = [ob.as_json() for ob in jts]
         return HttpResponse(json.dumps(results), mimetype="application/json")
 
 @login_required
 @csrf_exempt
 def tablejoin_api(request):
     if request.method == 'GET':
-         return HttpResponse("Unsupported Method", mimetype="application/json", status=500) 
+         return HttpResponse("Unsupported Method", mimetype="application/json", status=500)
     elif request.method == 'POST':
         table_name = request.POST.get("table_name", None)
         layer_typename = request.POST.get("layer_typename", None)
@@ -126,15 +127,15 @@ def tablejoin_api(request):
                 else:
                     return_dict = {
                         'success': False,
-                        'msg': "Error Creating Join: %s" % msg 
+                        'msg': "Error Creating Join: %s" % msg
                     }
                     return HttpResponse(json.dumps(return_dict), mimetype="application/json", status=400)
             except:
                 return_dict = {
                     'success': False,
-                    'msg': "Error Creating Join: %s" % msg 
+                    'msg': "Error Creating Join: %s" % msg
                 }
-                return HttpResponse(json.dumps(return_dict), mimetype="application/json", status=400) 
+                return HttpResponse(json.dumps(return_dict), mimetype="application/json", status=400)
         else:
             return HttpResponse(json.dumps({'msg':'Invalid Request', 'success':False}), mimetype='application/json', status=400)
 
@@ -186,11 +187,11 @@ def datatable_upload_and_join_api(request):
         return HttpResponse(json.dumps({'msg':'Uncaught error ingesting Data Table', 'success':False}), mimetype='application/json', status=400)
     try:
         original_table_attribute = join_props['table_attribute']
-        sanitized_table_attribute = slugify(unicode(original_table_attribute)).replace('-','_') 
+        sanitized_table_attribute = slugify(unicode(original_table_attribute)).replace('-','_')
         join_props['table_attribute'] = sanitized_table_attribute
         request.POST = join_props
         resp = tablejoin_api(request)
-        return resp 
+        return resp
     except:
         traceback.print_exc(sys.exc_info())
         return HttpResponse("Not yet")
