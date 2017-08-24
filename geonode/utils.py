@@ -51,8 +51,56 @@ try:
 except ImportError:
     from django.utils import simplejson as json
 
+DEFAULT_URL = ""
 DEFAULT_TITLE = ""
 DEFAULT_ABSTRACT = ""
+DEFAULT_CONTENT=(
+    '<h3>The Harvard WorldMap Project</h3>\
+  <p>WorldMap is an open source web mapping system that is currently\
+  under construction. It is built to assist academic research and\
+  teaching as well as the general public and supports discovery,\
+  investigation, analysis, visualization, communication and archiving\
+  of multi-disciplinary, multi-source and multi-format data,\
+  organized spatially and temporally.</p>\
+  <p>The first instance of WorldMap, focused on the continent of\
+  Africa, is called AfricaMap. Since its beta release in November of\
+  2008, the framework has been implemented in several geographic\
+  locations with different research foci, including metro Boston,\
+  East Asia, Vermont, Harvard Forest and the city of Paris. These web\
+  mapping applications are used in courses as well as by individual\
+  researchers.</p>\
+  <h3>Introduction to the WorldMap Project</h3>\
+  <p>WorldMap solves the problem of discovering where things happen.\
+  It draws together an array of public maps and scholarly data to\
+  create a common source where users can:</p>\
+  <ol>\
+  <li>Interact with the best available public data for a\
+  city/region/continent</li>\
+  <li>See the whole of that area yet also zoom in to particular\
+  places</li>\
+  <li>Accumulate both contemporary and historical data supplied by\
+  researchers and make it permanently accessible online</li>\
+  <li>Work collaboratively across disciplines and organizations with\
+  spatial information in an online environment</li>\
+  </ol>\
+  <p>The WorldMap project aims to accomplish these goals in stages,\
+  with public and private support. It draws on the basic insight of\
+  geographic information systems that spatiotemporal data becomes\
+  more meaningful as more "layers" are added, and makes use of tiling\
+  and indexing approaches to facilitate rapid search and\
+  visualization of large volumes of disparate data.</p>\
+  <p>WorldMap aims to augment existing initiatives for globally\
+  sharing spatial data and technology such as <a target="_blank" href="http://www.gsdi.org/">GSDI</a> (Global Spatial Data\
+  Infrastructure).WorldMap makes use of <a target="_blank" href="http://www.opengeospatial.org/">OGC</a> (Open Geospatial\
+  Consortium) compliant web services such as <a target="_blank" href="http://en.wikipedia.org/wiki/Web_Map_Service">WMS</a> (Web\
+  Map Service), emerging open standards such as <a target="_blank" href="http://wiki.osgeo.org/wiki/Tile_Map_Service_Specification">WMS-C</a>\
+  (cached WMS), and standards-based metadata formats, to enable\
+  WorldMap data layers to be inserted into existing data\
+  infrastructures.&nbsp;<br>\
+  <br>\
+  All WorldMap source code will be made available as <a target="_blank" href="http://www.opensource.org/">Open Source</a> for others to use\
+  and improve upon.</p>'
+)
 
 INVALID_PERMISSION_MESSAGE = _("Invalid permission level.")
 
@@ -259,7 +307,6 @@ class GXPMapBase(object):
                 if x not in results:
                     results.append(x)
             return results
-
         configs = [l.source_config(access_token) for l in layers]
 
         i = 0
@@ -323,12 +370,13 @@ class GXPMapBase(object):
             if remote_source['url'] not in source_urls:
                 index += 1
                 sources[index] = remote_source
-
         config = {
             'id': self.id,
             'about': {
                 'title': self.title,
-                'abstract': self.abstract
+                'abstract': self.abstract,
+		'introtext' : self.content_map,
+		'urlsuffix': self.urlsuffix
             },
             'aboutUrl': '../about',
             'defaultSourceType': "gxp_wmscsource",
@@ -364,11 +412,12 @@ class GXPMapBase(object):
 class GXPMap(GXPMapBase):
 
     def __init__(self, projection=None, title=None, abstract=None,
-                 center_x=None, center_y=None, zoom=None):
+                 center_x=None, center_y=None, zoom=None, content_map=None,urlsuffix=None):
         self.id = 0
         self.projection = projection
         self.title = title or DEFAULT_TITLE
         self.abstract = abstract or DEFAULT_ABSTRACT
+	self.content_map = content_map or DEFAULT_CONTENT
         _DEFAULT_MAP_CENTER = forward_mercator(settings.DEFAULT_MAP_CENTER)
         self.center_x = center_x if center_x is not None else _DEFAULT_MAP_CENTER[
             0]
@@ -376,6 +425,7 @@ class GXPMap(GXPMapBase):
             1]
         self.zoom = zoom if zoom is not None else settings.DEFAULT_MAP_ZOOM
         self.layers = []
+	self.urlsuffix=urlsuffix or DEFAULT_URL
 
 
 class GXPLayerBase(object):
@@ -484,7 +534,8 @@ def default_map_config(request):
         projection=getattr(settings, 'DEFAULT_MAP_CRS', 'EPSG:900913'),
         center_x=_DEFAULT_MAP_CENTER[0],
         center_y=_DEFAULT_MAP_CENTER[1],
-        zoom=settings.DEFAULT_MAP_ZOOM
+        zoom=settings.DEFAULT_MAP_ZOOM,
+	content_map=DEFAULT_CONTENT
     )
 
     def _baselayer(lyr, order):
