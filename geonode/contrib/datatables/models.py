@@ -8,7 +8,7 @@ from django.utils.text import slugify
 
 TRANSFORMATION_FUNCTIONS = []
 
-class DataTable(ResourceBase):
+class DataTable(Layer):
 
     """
     DataTable (inherits ResourceBase fields)
@@ -35,7 +35,7 @@ class DataTable(ResourceBase):
         cur.execute('drop table if exists %s;' % self.table_name)
         conn.commit()
         cur.close()
-        conn.close() 
+        conn.close()
 
 class GeocodeType(models.Model):
     name = models.CharField(max_length=255, unique=True, help_text='Examples: US Census Block, US County FIPS code, US Zip code, etc')
@@ -49,8 +49,8 @@ class GeocodeType(models.Model):
         ordering = ('sort_order', 'name')
 
 class JoinTargetFormatType(models.Model):
-    name = models.CharField(max_length=255, help_text='Census Tract (6 digits, no decimal)') 
-    description_shorthand = models.CharField(max_length=255, help_text='dddddd') 
+    name = models.CharField(max_length=255, help_text='Census Tract (6 digits, no decimal)')
+    description_shorthand = models.CharField(max_length=255, help_text='dddddd')
     clean_steps = models.TextField(help_text='verbal description. e.g. Remove non integers. Check for empty string. Pad with zeros until 6 digits.')
     regex_replacement_string = models.CharField(help_text='"[^0-9]"; Usage: re.sub("[^0-9]", "", "1234.99"'\
                                 , max_length=255)
@@ -70,7 +70,7 @@ class JoinTarget(models.Model):
     geocode_type = models.ForeignKey(GeocodeType, on_delete=models.PROTECT)
     type = models.ForeignKey(JoinTargetFormatType, null=True, blank=True)
     year = models.IntegerField(null=True, blank=True)
-    
+
     def __unicode__(self):
         return self.layer.title
 
@@ -87,7 +87,7 @@ class JoinTarget(models.Model):
 
 class TableJoin(models.Model):
     """
-    TableJoin 
+    TableJoin
     """
 
     datatable = models.ForeignKey(DataTable)
@@ -111,14 +111,14 @@ class TableJoin(models.Model):
         cur.execute('drop materialized view if exists %s;' % self.view_name.replace('view_', ''))
         conn.commit()
         cur.close()
-        conn.close() 
+        conn.close()
 
     def as_json(self):
         return dict(
             id=self.id, datable=self.datatable.table_name, source_layer=self.source_layer.typename, join_layer=self.join_layer.typename,
             table_attribute={'attribute':self.table_attribute.attribute, 'type':self.table_attribute.attribute_type},
             layer_attribute={'attribute':self.layer_attribute.attribute, 'type':self.layer_attribute.attribute_type},
-            view_name=self.view_name, 
+            view_name=self.view_name,
             matched_records_count=self.matched_records_count,
             unmatched_records_count=self.unmatched_records_count,
             unmatched_records_list=self.unmatched_records_list)
@@ -127,7 +127,7 @@ def pre_delete_datatable(instance, sender, **kwargs):
     """
     Remove the table from the Database
     """
-    instance.remove_table()    
+    instance.remove_table()
 
 
 def pre_delete_tablejoin(instance, sender, **kwargs):

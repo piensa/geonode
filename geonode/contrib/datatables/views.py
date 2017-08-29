@@ -29,9 +29,9 @@ def datatable_upload_api(request):
             instance = DataTable(uploaded_file=request.FILES['uploaded_file'], table_name=table_name, title=table_name)
             delimiter = data['delimiter_type']
             no_header_row = data['no_header_row']
-
             instance.save()
             dt, msg = process_csv_file(instance, delimiter=delimiter, no_header_row=no_header_row)
+
             if dt:
                 return_dict = {
                     'datatable_id': dt.pk,
@@ -82,25 +82,25 @@ def jointargets(request):
             if request.GET.get('start_year').isdigit():
                 kwargs['year__gte'] = request.GET.get('start_year')
             else:
-                return HttpResponse(json.dumps({'success': False, 'msg':'Invalid Start Year'}), mimetype="application/json")
+                return HttpResponse(json.dumps({'success': False, 'msg':'Invalid Start Year'}), content_type="application/json")
         if request.GET.get('end_year'):
             if request.GET.get('end_year').isdigit():
                 kwargs['year__lte'] = request.GET.get('end_year')
             else:
-                return HttpResponse(json.dumps({'success': False, 'msg':'Invalid End Year'}), mimetype="application/json")
+                return HttpResponse(json.dumps({'success': False, 'msg':'Invalid End Year'}), content_type="application/json")
         jts = JoinTarget.objects.filter(**kwargs)
         results = [ob.as_json() for ob in jts]
-        return HttpResponse(json.dumps(results), mimetype="application/json")
+        return HttpResponse(json.dumps(results), content_type="application/json")
     else:
         jts = JoinTarget.objects.all()
         results = [ob.as_json() for ob in jts]
-        return HttpResponse(json.dumps(results), mimetype="application/json")
+        return HttpResponse(json.dumps(results), content_type="application/json")
 
 @login_required
 @csrf_exempt
 def tablejoin_api(request):
     if request.method == 'GET':
-         return HttpResponse("Unsupported Method", mimetype="application/json", status=500)
+         return HttpResponse("Unsupported Method", content_type="application/json", status=500)
     elif request.method == 'POST':
         table_name = request.POST.get("table_name", None)
         layer_typename = request.POST.get("layer_typename", None)
@@ -123,21 +123,21 @@ def tablejoin_api(request):
                         'join_layer': tj.join_layer.typename,
                         'layer_url': tj.join_layer.get_absolute_url()
                     }
-                    return HttpResponse(json.dumps(return_dict), mimetype="application/json", status=200)
+                    return HttpResponse(json.dumps(return_dict), content_type="application/json", status=200)
                 else:
                     return_dict = {
                         'success': False,
                         'msg': "Error Creating Join: %s" % msg
                     }
-                    return HttpResponse(json.dumps(return_dict), mimetype="application/json", status=400)
+                    return HttpResponse(json.dumps(return_dict), content_type="application/json", status=400)
             except:
                 return_dict = {
                     'success': False,
                     'msg': "Error Creating Join: %s" % msg
                 }
-                return HttpResponse(json.dumps(return_dict), mimetype="application/json", status=400)
+                return HttpResponse(json.dumps(return_dict), content_type="application/json", status=400)
         else:
-            return HttpResponse(json.dumps({'msg':'Invalid Request', 'success':False}), mimetype='application/json', status=400)
+            return HttpResponse(json.dumps({'msg':'Invalid Request', 'success':False}), content_type='application/json', status=400)
 
 @login_required
 @csrf_exempt
@@ -156,20 +156,20 @@ def tablejoin_remove(request, tj_id):
         tj.datatable.delete()
         tj.join_layer.delete()
         tj.delete()
-        return HttpResponse(json.dumps({'success':True, 'msg': ('%s removed' % (tj.view_name))}), mimetype='application/json', status=200)
+        return HttpResponse(json.dumps({'success':True, 'msg': ('%s removed' % (tj.view_name))}), content_type='application/json', status=200)
     except:
-        return HttpResponse(json.dumps({'success':False, 'msg': ('Error removing Join %s' % (sys.exc_info()[0]))}), mimetype='application/json', status=400)
+        return HttpResponse(json.dumps({'success':False, 'msg': ('Error removing Join %s' % (sys.exc_info()[0]))}), content_type='application/json', status=400)
 
-@login_required
+# @login_required
 @csrf_exempt
 def datatable_remove(request, dt_id):
     # TODO: Check Permissions!!
     try:
         dt = get_object_or_404(DataTable, pk=dt_id)
         dt.delete()
-        return HttpResponse(json.dumps({'success':True, 'msg': ('%s removed' % (dt.table_name))}), mimetype='application/json', status=200)
+        return HttpResponse(json.dumps({'success':True, 'msg': ('%s removed' % (dt.table_name))}), content_type='application/json', status=200)
     except:
-        return HttpResponse(json.dumps({'success':False, 'msg': ('Error removing DataTable %s' % (sys.exc_info()[0]))}), mimetype='application/json', status=400)
+        return HttpResponse(json.dumps({'success':False, 'msg': ('Error removing DataTable %s' % (sys.exc_info()[0]))}), content_type='application/json', status=400)
 
 @login_required
 @csrf_exempt
@@ -180,11 +180,11 @@ def datatable_upload_and_join_api(request):
         resp = datatable_upload_api(request)
         upload_return_dict = json.loads(resp.content)
         if upload_return_dict['success'] != True:
-            return HttpResponse(json.dumps(upload_return_dict), mimetype='application/json', status=400)
+            return HttpResponse(json.dumps(upload_return_dict), content_type='application/json', status=400)
         join_props['table_name'] = upload_return_dict['datatable_name']
     except:
         traceback.print_exc(sys.exc_info())
-        return HttpResponse(json.dumps({'msg':'Uncaught error ingesting Data Table', 'success':False}), mimetype='application/json', status=400)
+        return HttpResponse(json.dumps({'msg':'Uncaught error ingesting Data Table', 'success':False}), content_type='application/json', status=400)
     try:
         original_table_attribute = join_props['table_attribute']
         sanitized_table_attribute = slugify(unicode(original_table_attribute)).replace('-','_')
@@ -203,14 +203,14 @@ def datatable_upload_lat_lon_api(request):
         resp = datatable_upload_api(request)
         upload_return_dict = json.loads(resp.content)
         if upload_return_dict['success'] != True:
-            return HttpResponse(json.dumps(upload_return_dict), mimetype='application/json', status=400)
+            return HttpResponse(json.dumps(upload_return_dict), content_type='application/json', status=400)
     except:
         traceback.print_exc(sys.exc_info())
-        return HttpResponse(json.dumps({'msg':'Uncaught error ingesting Data Table', 'success':False}), mimetype='application/json', status=400)
+        return HttpResponse(json.dumps({'msg':'Uncaught error ingesting Data Table', 'success':False}), content_type='application/json', status=400)
 
     try:
         layer, msg = create_point_col_from_lat_lon(upload_return_dict['datatable_name'], request.POST.get('lat_column'), request.POST.get('lon_column'))
-        return HttpResponse(json.dumps(upload_return_dict), mimetype='application/json', status=200)
+        return HttpResponse(json.dumps(upload_return_dict), content_type='application/json', status=200)
     except:
         traceback.print_exc(sys.exc_info())
-        return HttpResponse(json.dumps({'msg':'Uncaught error ingesting Data Table', 'success':False}), mimetype='application/json', status=400)
+        return HttpResponse(json.dumps({'msg':'Uncaught error ingesting Data Table', 'success':False}), content_type='application/json', status=400)
