@@ -15,6 +15,8 @@ login_data = dict(username="admin", password="admin", csrfmiddlewaretoken=csrfto
 r = client.post(login_url, data=login_data, headers={"Referer": "test-client"})
 print r
 
+# ca_tracts_pop.csv file from
+#http://www.qgistutorials.com/en/docs/performing_table_joins.html#get-the-data
 files = {'uploaded_file': open('scratch/ca_tracts_pop.csv','rb')}
 response = client.post(base_url + '/datatables/api/upload', data={'title':'test'}, files=files)
 print response.content
