@@ -75,18 +75,6 @@ def process_csv_file(instance, delimiter=",", no_header_row=False):
     import psycopg2
     db = ogc_server_settings.datastore_db
 
-    # conn = psycopg2.connect(
-    #     "dbname='" +
-    #     db['NAME'] +
-    #     "' user='" +
-    #     db['USER'] +
-    #     "'  password='" +
-    #     db['PASSWORD'] +
-    #     "' port=" +
-    #     db['PORT'] +
-    #     " host='" +
-    #     db['HOST'] +
-    #     "'")
     conn = psycopg2.connect("dbname='{0}' user='{1}' host='{2}' password='{3}' port={4}".format(
         db['NAME'], db['USER'], db['HOST'], db['PASSWORD'], db['PORT']))
 
