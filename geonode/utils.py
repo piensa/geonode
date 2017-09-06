@@ -754,6 +754,9 @@ def check_shp_columnnames(layer):
     """
 
     # TODO we may add in a better location this method
+    if layer.charset is u"":
+        layer.charset = unicode('UTF-8');
+
     inShapefile = ''
     for f in layer.upload_session.layerfile_set.all():
         if os.path.splitext(f.file.name)[1] == '.shp':
