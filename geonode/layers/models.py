@@ -432,6 +432,7 @@ class Attribute(models.Model):
         max_length=255,
         blank=True,
         null=True)
+    last_modified = models.DateTimeField(auto_now=True)
 
     # statistical derivations
     count = models.IntegerField(
